@@ -34,7 +34,7 @@ SUBS_MAP = {"RIROM": "理論", "DENRYOKU": "電力", "KIKAI": "機械", "HOUKI":
 # 🌐 Webからの自動ダウンロード機能
 # ==========================================
 # あなたのGitHubから、確立した問題データを自動で取得するURL
-JSON_URL = "https://githubusercontent.com"
+JSON_URL = "raw.githubusercontent.com"
 
 @st.cache_data  # 起動ごとの無駄な通信を防ぎ、アプリを高速化するStreamlitの機能
 def load_web_quizzes():
