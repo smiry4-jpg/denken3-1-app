@@ -22,7 +22,7 @@ pdf_dir = os.path.join(base_dir, "pdf")
 os.makedirs(pdf_dir, exist_ok=True)
 
 YEARS_MAP = {
-    "R07k": "物理・令和7年 下期", "R07s": "令和7年 上期",
+    "R07k": "令和7年 下期", "R07s": "令和7年 上期",
     "R06k": "令和6年 下期", "R06s": "令和6年 上期",
     "R05k": "令和5年 下期", "R05s": "令和5年 上期",
     "R04k": "令和4年 下期", "R04s": "令和4年 上期",
@@ -31,12 +31,11 @@ YEARS_MAP = {
 SUBS_MAP = {"RIROM": "理論", "DENRYOKU": "電力", "KIKAI": "機械", "HOUKI": "法規"}
 
 # ==========================================
-# 🌐 Webからの自動ダウンロード機能（本来の正しい形）
+# 🌐 Webからの自動ダウンロード機能
 # ==========================================
 HOST_NAME = "raw.github" + "usercontent.com"
 JSON_URL = f"https://{HOST_NAME}/smiry4-jpg/denken3-1-app/main/quiz.json"
 
-# 💡 拡張性を殺さないよう、キャッシュを使わずに毎回GitHubから最新データを生で取得します
 def load_web_quizzes_fresh():
     try:
         response = requests.get(JSON_URL, timeout=5)
@@ -100,10 +99,8 @@ if st.button("🟢 この条件で問題をセットする"):
     year_name = YEARS_MAP[selected_year]
     sub_name = SUBS_MAP[selected_sub]
     
-    # GitHubのデータから条件に合う問題を抽出
-    # 部分一致（＝「理論」という文字が含まれていれば、B問題もすべてセットする）
-　　　matched_quizzes = [q for q in web_quizzes if sub_name in q.get("category", "")]
-
+    # 💡 全角スペースを完璧に排除し、部分一致でB問題も取得できるように直しました
+    matched_quizzes = [q for q in web_quizzes if sub_name in q.get("category", "")]
     
     if matched_quizzes:
         if is_shuffle:
@@ -113,7 +110,6 @@ if st.button("🟢 この条件で問題をセットする"):
         st.success(f"🌐 GitHubから最新の {year_name}・{sub_name} の問題を読み込みました！")
         st.rerun()
     else:
-        # GitHubにデータがない場合は従来のPDF自動生成を試みる
         data_file_path = os.path.join(base_dir, f"quiz_data_{selected_year}_{selected_sub}.py")
         pdf_path = os.path.join(pdf_dir, f"{selected_year}_{selected_sub}.pdf")
         
