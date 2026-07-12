@@ -101,7 +101,9 @@ if st.button("🟢 この条件で問題をセットする"):
     sub_name = SUBS_MAP[selected_sub]
     
     # GitHubのデータから条件に合う問題を抽出
-    matched_quizzes = [q for q in web_quizzes if q.get("category") == sub_name]
+    # 部分一致（＝「理論」という文字が含まれていれば、B問題もすべてセットする）
+　　　matched_quizzes = [q for q in web_quizzes if sub_name in q.get("category", "")]
+
     
     if matched_quizzes:
         if is_shuffle:
