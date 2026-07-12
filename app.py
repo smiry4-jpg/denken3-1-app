@@ -4,7 +4,7 @@ import json
 import time
 import urllib.request
 import urllib.parse
-import random  # 💡 ランダム機能のために追加
+import random
 import requests
 import streamlit as st
 import fitz  # PyMuPDF
@@ -21,9 +21,8 @@ base_dir = os.path.dirname(__file__) if '__file__' in locals() else '.'
 pdf_dir = os.path.join(base_dir, "pdf")
 os.makedirs(pdf_dir, exist_ok=True)
 
-# 💡 令和7年度の選択肢を追加しました
 YEARS_MAP = {
-    "R07k": "令和7年 下期", "R07s": "令和7年 上期",
+    "R07k": "物理・令和7年 下期", "R07s": "令和7年 上期",
     "R06k": "令和6年 下期", "R06s": "令和6年 上期",
     "R05k": "令和5年 下期", "R05s": "令和5年 上期",
     "R04k": "令和4年 下期", "R04s": "令和4年 上期",
@@ -32,27 +31,27 @@ YEARS_MAP = {
 SUBS_MAP = {"RIROM": "理論", "DENRYOKU": "電力", "KIKAI": "機械", "HOUKI": "法規"}
 
 # ==========================================
-# 🌐 Webからの自動ダウンロード機能
+# 🌐 Webからの自動ダウンロード機能（本来の正しい形）
 # ==========================================
 HOST_NAME = "raw.github" + "usercontent.com"
 JSON_URL = f"https://{HOST_NAME}/smiry4-jpg/denken3-1-app/main/quiz.json"
 
-# @st.cache_data #
-def load_web_quizzes():
+# 💡 拡張性を殺さないよう、キャッシュを使わずに毎回GitHubから最新データを生で取得します
+def load_web_quizzes_fresh():
     try:
         response = requests.get(JSON_URL, timeout=5)
         response.raise_for_status()
         return response.json()
     except Exception as e:
+        st.warning(f"⚠️ Webからの最新問題データの取得に失敗しました: {e}")
         return []
 
-web_quizzes = load_web_quizzes()
+web_quizzes = load_web_quizzes_fresh()
 
 # ==========================================
 # 🤖 PDFからAIが自動生成する関数（元の機能を維持）
 # ==========================================
 def generate_quiz_from_pdf(selected_year, selected_sub, pdf_path, data_file_path):
-    # 元のAI生成ロジックをそのまま残しています
     if not os.path.exists(pdf_path):
         st.error(f"❌ PDFファイルが見つかりません: {pdf_path}")
         return False
@@ -95,7 +94,7 @@ def generate_quiz_from_pdf(selected_year, selected_sub, pdf_path, data_file_path
 # ==========================================
 selected_year = st.selectbox("📅 年度を選択してください", list(YEARS_MAP.keys()), format_func=lambda x: YEARS_MAP[x])
 selected_sub = st.selectbox("📚 科目を選択してください", list(SUBS_MAP.keys()), format_func=lambda x: SUBS_MAP[x])
-is_shuffle = st.checkbox("🔀 出題順をランダムにする")  # 💡 ランダム選択のチェックボックス
+is_shuffle = st.checkbox("🔀 出題順をランダムにする")
 
 if st.button("🟢 この条件で問題をセットする"):
     year_name = YEARS_MAP[selected_year]
@@ -105,12 +104,11 @@ if st.button("🟢 この条件で問題をセットする"):
     matched_quizzes = [q for q in web_quizzes if q.get("category") == sub_name]
     
     if matched_quizzes:
-        # 💡 チェックが入っていればランダムにシャッフル
         if is_shuffle:
             random.shuffle(matched_quizzes)
         st.session_state.quiz_list = matched_quizzes
         st.session_state.current_index = 0
-        st.success(f"🌐 GitHubから {year_name}・{sub_name} の問題を読み込みました！")
+        st.success(f"🌐 GitHubから最新の {year_name}・{sub_name} の問題を読み込みました！")
         st.rerun()
     else:
         # GitHubにデータがない場合は従来のPDF自動生成を試みる
@@ -140,7 +138,7 @@ if st.button("🟢 この条件で問題をセットする"):
                 st.error(f"データの読み込みに失敗しました: {e}")
 
 # ==========================================
-# 📝 クイズ出題・回答メイン処理（Streamlit状態管理対応）
+# 📝 クイズ出題・回答メイン処理
 # ==========================================
 if "quiz_list" in st.session_state and st.session_state.quiz_list:
     quizzes = st.session_state.quiz_list
@@ -151,7 +149,6 @@ if "quiz_list" in st.session_state and st.session_state.quiz_list:
         st.subheader(f"📝 第 {idx + 1} 問 / 全 {len(quizzes)} 問 (問 {quiz['q_num']})")
         st.markdown(f"**【問題】**\n{quiz['question']}")
         
-        # 💡 画像（回路図）の説明テキストがある場合は表示
         if quiz.get("has_image") and quiz.get("image_description"):
             st.caption(f"🔍 [図面解説] {quiz['image_description']}")
             
@@ -173,7 +170,6 @@ if "quiz_list" in st.session_state and st.session_state.quiz_list:
             st.markdown("### 💡 詳細解説")
             st.info(quiz["explanation"])
             
-            # 🎬 YouTubeアプリ連携リンクの自動生成（あなたの既存コードを完全統合）
             search_word = f"電験三種 {YEARS_MAP[selected_year].replace(' ', '')} {SUBS_MAP[selected_sub]} 問{quiz['q_num']}"
             encoded_search_word = urllib.parse.quote(search_word)
             youtube_app_url = f"youtube://results?search_query={encoded_search_word}"
