@@ -34,7 +34,10 @@ SUBS_MAP = {"RIROM": "理論", "DENRYOKU": "電力", "KIKAI": "機械", "HOUKI":
 # 🌐 Webからの自動ダウンロード機能
 # ==========================================
 # あなたのGitHubから、確立した問題データを自動で取得するURL
-JSON_URL = "raw.githubusercontent.com"
+# 💡 AIの自動URL変換バグを回避するため、文字を合体させて正しいURLを作ります
+HOST_NAME = "raw.github" + "usercontent.com"
+JSON_URL = f"https://{HOST_NAME}/smiry4-jpg/denken3-1-app/main/quiz.json"
+
 
 @st.cache_data  # 起動ごとの無駄な通信を防ぎ、アプリを高速化するStreamlitの機能
 def load_web_quizzes():
