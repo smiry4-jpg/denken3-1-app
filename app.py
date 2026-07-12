@@ -31,20 +31,39 @@ YEARS_MAP = {
 SUBS_MAP = {"RIROM": "理論", "DENRYOKU": "電力", "KIKAI": "機械", "HOUKI": "法規"}
 
 # ==========================================
-# 🌐 Webからの自動ダウンロード機能（年度×科目・完全分離版）
+# 🌐 Webからの自動ダウンロード機能（名前ズレ自動救済版）
 # ==========================================
 HOST_NAME = "raw.github" + "usercontent.com"
 
 def load_web_quizzes_by_target(year_code, subject_name):
-    # 💡 画面の選択に合わせて、例：「R07k_電力.json」というピンポイントなURLを自動生成します
-    url = f"https://{HOST_NAME}/smiry4-jpg/denken3-1-app/main/{year_code}_{subject_name}.json"
+    # 💡 対策：まずは通常の名前（スペースなし）で取得を試みます
+    url_normal = f"https://{HOST_NAME}/smiry4-jpg/denken3-1-app/main/{year_code}_{subject_name}.json"
     try:
-        response = requests.get(url, timeout=5)
-        response.raise_for_status()
-        return response.json()
-    except Exception as e:
-        # まだGitHub側にその年度・科目のファイルが作られていない場合は空リストを返す
-        return []
+        response = requests.get(url_normal, timeout=3)
+        if response.status_code == 200:
+            return response.json()
+    except:
+        pass
+
+    # 💡 対策：もし失敗したら、ファイル名の末尾に半角スペースが入っていると仮定してもう一度試します
+    url_space_half = f"https://{HOST_NAME}/smiry4-jpg/denken3-1-app/main/{year_code}_{subject_name}%20.json"
+    try:
+        response = requests.get(url_space_half, timeout=3)
+        if response.status_code == 200:
+            return response.json()
+    except:
+        pass
+
+    # 💡 対策：さらに失敗したら、末尾に全角スペースが入っていると仮定してもう一度試します
+    url_space_full = f"https://{HOST_NAME}/smiry4-jpg/denken3-1-app/main/{year_code}_{subject_name}　.json"
+    try:
+        response = requests.get(url_space_full, timeout=3)
+        if response.status_code == 200:
+            return response.json()
+    except:
+        pass
+
+    return []
 
 # ==========================================
 # 🤖 PDFからAIが自動生成する関数（元の機能を維持）
@@ -98,7 +117,7 @@ if st.button("🟢 この条件で問題をセットする"):
     year_name = YEARS_MAP[selected_year]
     sub_name = SUBS_MAP[selected_sub]
     
-    # 💡 押された瞬間に、対象のファイルをピンポイントでロードします
+    # 💡 判定を強化した関数を呼び出します
     matched_quizzes = load_web_quizzes_by_target(selected_year, sub_name)
     
     if matched_quizzes:
@@ -109,7 +128,6 @@ if st.button("🟢 この条件で問題をセットする"):
         st.success(f"🌐 GitHubから最新の {year_name}・{sub_name} を読み込みました！")
         st.rerun()
     else:
-        # GitHubに個別データがない場合は従来のPDF自動生成を試みる
         data_file_path = os.path.join(base_dir, f"quiz_data_{selected_year}_{selected_sub}.py")
         pdf_path = os.path.join(pdf_dir, f"{selected_year}_{selected_sub}.pdf")
         
