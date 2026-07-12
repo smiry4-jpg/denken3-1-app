@@ -37,7 +37,7 @@ SUBS_MAP = {"RIROM": "理論", "DENRYOKU": "電力", "KIKAI": "機械", "HOUKI":
 HOST_NAME = "raw.github" + "usercontent.com"
 JSON_URL = f"https://{HOST_NAME}/smiry4-jpg/denken3-1-app/main/quiz.json"
 
-@st.cache_data
+# @st.cache_data #
 def load_web_quizzes():
     try:
         response = requests.get(JSON_URL, timeout=5)
