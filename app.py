@@ -7,6 +7,8 @@ import urllib.parse
 import fitz  # PyMuPDF
 from google import genai
 import streamlit as st
+import requests
+import json
 
 # ==========================================
 # ⚙️ 画面のデザインと設定
