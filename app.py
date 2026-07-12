@@ -30,6 +30,27 @@ YEARS_MAP = {
 }
 SUBS_MAP = {"RIROM": "理論", "DENRYOKU": "電力", "KIKAI": "機械", "HOUKI": "法規"}
 
+# ==========================================
+# 🌐 Webからの自動ダウンロード機能
+# ==========================================
+# あなたのGitHubから、確立した問題データを自動で取得するURL
+JSON_URL = "https://githubusercontent.com"
+
+@st.cache_data  # 起動ごとの無駄な通信を防ぎ、アプリを高速化するStreamlitの機能
+def load_web_quizzes():
+    try:
+        response = requests.get(JSON_URL, timeout=5)
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        # 通信エラー時は、画面に警告を出して空のリストを返す
+        st.warning(f"⚠️ Webからの問題データの取得に失敗しました: {e}")
+        return []
+
+# これで、変数 web_quizzes の中にダウンロードされた全問題データが入ります
+web_quizzes = load_web_quizzes()
+
+
 # --- 金庫のAPIキーの読み込み ---
 if "GEMINI_API_KEY" not in st.secrets:
     st.error("❌ 金庫（Secrets）に GEMINI_API_KEY が登録されていません。設定を確認してください。")
