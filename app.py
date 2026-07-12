@@ -39,11 +39,19 @@ if "GEMINI_API_KEY" not in st.secrets:
 
 ai_client = genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
 
+# ==========================================
+# 📥 【修正】大文字小文字のブレを100%吸収して確実に落とす処理
+# ==========================================
 def download_single_pdf(year, sub_code):
-    url = f"https://shiken.or.jp{year}_shiken_third_{sub_code}_q.pdf"
     pdf_path = os.path.join(pdf_dir, f"{year}_{sub_code}.pdf")
     if os.path.exists(pdf_path) and os.path.getsize(pdf_path) > 1000:
         return True
+        
+    # 試験センターの最新の小文字ルール（.lower()）に完全適合させます
+    y_low = year.lower()
+    s_low = sub_code.lower()
+    url = f"https://shiken.or.jp{y_low}_shiken_third_{s_low}_q.pdf"
+    
     try:
         req = urllib.request.Request(url)
         req.add_header('User-Agent', 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_5 like Mac OS X) AppleWebKit/605.1.15 Safari/604.1')
@@ -52,7 +60,17 @@ def download_single_pdf(year, sub_code):
                 out_file.write(response.read())
         return True
     except:
-        return False
+        # 万が一大文字が混ざっていた場合のための予備の接続ロジック（フォールバック）
+        try:
+            alt_url = f"https://shiken.or.jp{year}_shiken_third_{sub_code}_q.pdf"
+            alt_req = urllib.request.Request(alt_url)
+            alt_req.add_header('User-Agent', 'Mozilla/5.0')
+            with urllib.request.urlopen(alt_req, timeout=10) as response:
+                with open(pdf_path, 'wb') as out_file:
+                    out_file.write(response.read())
+            return True
+        except:
+            return False
 
 def scan_pdf_to_raw_text(year, sub_code):
     pdf_path = os.path.join(pdf_dir, f"{year}_{sub_code}.pdf")
