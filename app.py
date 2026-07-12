@@ -85,6 +85,7 @@ if st.session_state.active_quiz:
         st.markdown(f"🎬 **解説動画へのリンク**")
         st.markdown(f"👉 [🌐 ここをタップして YouTube アプリで直接検索する]({youtube_app_url})")
         
+        # 🌟【インデント完全修正】「次へ進むボタン」の中身がタップされた瞬間だけ、確実に画面を書き換えるロジックに段落を修正しました
         if idx < len(st.session_state.active_quiz) - 1:
             if st.button("➡️ 次の問題へ"):
                 st.session_state.current_q_idx += 1
