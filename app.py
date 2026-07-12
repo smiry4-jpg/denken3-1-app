@@ -31,21 +31,20 @@ YEARS_MAP = {
 SUBS_MAP = {"RIROM": "理論", "DENRYOKU": "電力", "KIKAI": "機械", "HOUKI": "法規"}
 
 # ==========================================
-# 🌐 Webからの自動ダウンロード機能
+# 🌐 Webからの自動ダウンロード機能（年度×科目・完全分離版）
 # ==========================================
 HOST_NAME = "raw.github" + "usercontent.com"
-JSON_URL = f"https://{HOST_NAME}/smiry4-jpg/denken3-1-app/main/quiz.json"
 
-def load_web_quizzes_fresh():
+def load_web_quizzes_by_target(year_code, subject_name):
+    # 💡 画面の選択に合わせて、例：「R07k_電力.json」というピンポイントなURLを自動生成します
+    url = f"https://{HOST_NAME}/smiry4-jpg/denken3-1-app/main/{year_code}_{subject_name}.json"
     try:
-        response = requests.get(JSON_URL, timeout=5)
+        response = requests.get(url, timeout=5)
         response.raise_for_status()
         return response.json()
     except Exception as e:
-        st.warning(f"⚠️ Webからの最新問題データの取得に失敗しました: {e}")
+        # まだGitHub側にその年度・科目のファイルが作られていない場合は空リストを返す
         return []
-
-web_quizzes = load_web_quizzes_fresh()
 
 # ==========================================
 # 🤖 PDFからAIが自動生成する関数（元の機能を維持）
@@ -99,17 +98,18 @@ if st.button("🟢 この条件で問題をセットする"):
     year_name = YEARS_MAP[selected_year]
     sub_name = SUBS_MAP[selected_sub]
     
-    # 💡 全角スペースを完璧に排除し、部分一致でB問題も取得できるように直しました
-    matched_quizzes = [q for q in web_quizzes if sub_name in q.get("category", "")]
+    # 💡 押された瞬間に、対象のファイルをピンポイントでロードします
+    matched_quizzes = load_web_quizzes_by_target(selected_year, sub_name)
     
     if matched_quizzes:
         if is_shuffle:
             random.shuffle(matched_quizzes)
         st.session_state.quiz_list = matched_quizzes
         st.session_state.current_index = 0
-        st.success(f"🌐 GitHubから最新の {year_name}・{sub_name} の問題を読み込みました！")
+        st.success(f"🌐 GitHubから最新の {year_name}・{sub_name} を読み込みました！")
         st.rerun()
     else:
+        # GitHubに個別データがない場合は従来のPDF自動生成を試みる
         data_file_path = os.path.join(base_dir, f"quiz_data_{selected_year}_{selected_sub}.py")
         pdf_path = os.path.join(pdf_dir, f"{selected_year}_{selected_sub}.pdf")
         
